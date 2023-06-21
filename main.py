@@ -1,7 +1,10 @@
+from openpyxl import Workbook
+from openpyxl.styles import Font
 from sendgrid.helpers.mail import Mail
 import csv
 import sendgrid
 import config
+
 
 apiKey = config.chave_api
 
@@ -14,6 +17,25 @@ with open('contatos.csv', 'r') as file:
     next(reader)  # Pula o cabeçalho
     for row in reader:
         contatos.append(row)
+
+# Criação do workbook do Excel
+wb = Workbook()
+ws_sucesso = wb.active
+ws_sucesso.title = "Sucesso"
+ws_falha = wb.create_sheet(title="Falha")
+
+# Estilizando as células do cabeçalho
+header_font = Font(bold=True)
+ws_sucesso['A1'].font = header_font
+ws_sucesso['B1'].font = header_font
+ws_falha['A1'].font = header_font
+ws_falha['B1'].font = header_font
+
+# Definindo os cabeçalhos das colunas
+ws_sucesso['A1'] = 'E-mail'
+ws_sucesso['B1'] = 'Status'
+ws_falha['A1'] = 'E-mail'
+ws_falha['B1'] = 'Erro'
 
 # Configuração e envio do e-mail para cada contato
 for contato in contatos:
@@ -112,6 +134,7 @@ for email, contato in contatos_detalhes.items():
         subject='Sending with Twilio SendGrid is Fun',
         html_content=html_content
     )
+
     # Configuração e envio do e-mail
     try:
         sg = sendgrid.SendGridAPIClient(api_key=apiKey)
@@ -121,5 +144,17 @@ for email, contato in contatos_detalhes.items():
         print(response.headers)
         print(f'E-mail enviado para {email}')
 
+        if response.status_code == 202:
+            # E-mail enviado com sucesso
+            ws_sucesso.append([email, 'Enviado'])
+        else:
+            # Falha ao enviar o e-mail
+            ws_falha.append([email, f'Erro {response.status_code}'])
+
     except Exception as e:
+        # Falha ao enviar o e-mail
+        ws_falha.append([email, str(e)])
         print(f'Erro ao enviar e-mail para {email}: {str(e)}')
+
+# Salvar o arquivo Excel
+wb.save('relatorio_emails.xlsx')
