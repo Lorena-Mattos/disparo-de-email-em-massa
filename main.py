@@ -1,5 +1,4 @@
 from openpyxl import Workbook
-from openpyxl.styles import Font
 from sendgrid.helpers.mail import Mail
 import csv
 import sendgrid
@@ -18,26 +17,10 @@ with open('contatos.csv', 'r') as file:
     for row in reader:
         contatos.append(row)
 
-# Criação do workbook do Excel
-wb = Workbook()
-ws_sucesso = wb.active
-ws_sucesso.title = "Sucesso"
-ws_falha = wb.create_sheet(title="Falha")
-
-# Estilizando as células do cabeçalho
-header_font = Font(bold=True)
-ws_sucesso['A1'].font = header_font
-ws_sucesso['B1'].font = header_font
-ws_falha['A1'].font = header_font
-ws_falha['B1'].font = header_font
-
-# Definindo os cabeçalhos das colunas
-ws_sucesso['A1'] = 'E-mail'
-ws_sucesso['B1'] = 'Status'
-ws_falha['A1'] = 'E-mail'
-ws_falha['B1'] = 'Erro'
-
 # Configuração e envio do e-mail para cada contato
+enviados = []
+falhas = []
+
 for contato in contatos:
     nome = str(contato[0])
     numero = str(contato[1])
@@ -128,13 +111,13 @@ for email, contato in contatos_detalhes.items():
                    </body>
                    </html>
                """
+
     message = Mail(
         from_email=config.from_email,
         to_emails=email,
         subject='Sending with Twilio SendGrid is Fun',
         html_content=html_content
     )
-
     # Configuração e envio do e-mail
     try:
         sg = sendgrid.SendGridAPIClient(api_key=apiKey)
@@ -143,18 +126,27 @@ for email, contato in contatos_detalhes.items():
         print(response.body)
         print(response.headers)
         print(f'E-mail enviado para {email}')
-
-        if response.status_code == 202:
-            # E-mail enviado com sucesso
-            ws_sucesso.append([email, 'Enviado'])
-        else:
-            # Falha ao enviar o e-mail
-            ws_falha.append([email, f'Erro {response.status_code}'])
+        enviados.append(email)
 
     except Exception as e:
         # Falha ao enviar o e-mail
-        ws_falha.append([email, str(e)])
         print(f'Erro ao enviar e-mail para {email}: {str(e)}')
+        falhas.append(email)
 
-# Salvar o arquivo Excel
-wb.save('relatorio_emails.xlsx')
+# Criação do relatório em Excel
+workbook = Workbook()
+worksheet = workbook.active
+
+# Cabeçalho do relatório
+worksheet.append(['E-mail', 'Status'])
+
+# Preenchimento dos dados de e-mails enviados
+for email in enviados:
+    worksheet.append([email, 'Enviado'])
+
+# Preenchimento dos dados de e-mails que falharam
+for email in falhas:
+    worksheet.append([email, 'Falha'])
+
+# Salvando o arquivo de relatório
+workbook.save('relatorio_emails.xlsx')
