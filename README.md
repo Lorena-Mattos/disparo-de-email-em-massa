@@ -41,7 +41,7 @@ Em suma, o objetivo desse código é automatizar o envio de e-mails personalizad
 2. Instale as dependências necessárias executando o seguinte comando: `pip install -r requirements.txt`
 
 3. Insira os detalhes dos contatos no arquivo `contatos.csv` no formato apropriado.
-4. Configure as informações de e-mail remetente em `config.py`.
+4. Configure as informações de e-mail remetente e da API Key em `config.py`.
 5. Execute o script `main.py` para enviar os e-mails.
 
 
