@@ -1,5 +1,6 @@
 from openpyxl import Workbook
 from sendgrid.helpers.mail import Mail
+from datetime import datetime
 import csv
 import sendgrid
 import config
@@ -134,6 +135,9 @@ for email, contato in contatos_detalhes.items():
         falhas.append(email)
 
 # Criação do relatório em Excel
+data = f'{datetime.today():%d-%m-%Y}'
+hora = f'{datetime.now():%H-%M}'
+nome_arquivo = f'{data}_{hora}.xlsx'
 workbook = Workbook()
 worksheet = workbook.active
 
@@ -149,4 +153,4 @@ for email in falhas:
     worksheet.append([email, 'Falha'])
 
 # Salvando o arquivo de relatório
-workbook.save('relatorio_emails.xlsx')
+workbook.save(f'Relatorio_{nome_arquivo}')
